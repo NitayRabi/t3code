@@ -185,13 +185,14 @@ const makeOrchestrationEngine = Effect.gen(function* () {
           envelope.command.type !== "thread.create" &&
           !commandReadModel.threads.some((thread) => thread.id === aggregateRef.aggregateId)
         ) {
-          const projectedThread = yield* projectionSnapshotQuery.getThreadDetailById(
-            aggregateRef.aggregateId,
-          );
-          if (Option.isSome(projectedThread)) {
+          const projectedCommandModel = yield* projectionSnapshotQuery.getCommandReadModel({
+            threadId: aggregateRef.aggregateId,
+          });
+          const projectedThread = projectedCommandModel.threads[0];
+          if (projectedThread !== undefined) {
             commandReadModel = {
               ...commandReadModel,
-              threads: [...commandReadModel.threads, projectedThread.value],
+              threads: [...commandReadModel.threads, projectedThread],
             };
             yield* Effect.logDebug("hydrated missing orchestration command thread").pipe(
               Effect.annotateLogs({ threadId: aggregateRef.aggregateId }),
